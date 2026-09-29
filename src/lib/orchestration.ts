@@ -17,7 +17,7 @@ const MONOPHONIC_LEADS = new Set<PlayerInstrument>(["violin", "cello", "flute", 
 function eventPitches(event: NoteEvent): string[] {
   const value = event[0];
   if (typeof value === "number") return [];
-  return Array.isArray(value) ? [...value] : [value];
+  return typeof value === "string" ? [value] : [...value];
 }
 
 function addNotes(target: ArrangedNote[], role: ArrangementRole, instrument: PlayerInstrument, pitches: string[], startPulse: number, durationPulses: number, level: number) {
