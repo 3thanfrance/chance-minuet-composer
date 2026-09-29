@@ -9,7 +9,7 @@ export function staffPitchY(pitch: string, staff: "treble" | "bass"): number {
   const octave = Number(match[2]);
   if (!letter || !Number.isInteger(octave)) return staff === "treble" ? 38 : 88;
   const step = octave * 7 + (letterSteps[letter] ?? 0);
-  const anchor = staff === "treble" ? 4 * 7 + letterSteps.e : 2 * 7 + letterSteps.g;
+  const anchor = staff === "treble" ? 4 * 7 + 2 : 2 * 7 + 4;
   const anchorY = staff === "treble" ? 38 : 88;
   return anchorY - (step - anchor) * 2.5;
 }
