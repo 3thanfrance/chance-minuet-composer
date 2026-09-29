@@ -15,3 +15,5 @@
 - [x] Correct exported measure IDs and validate local saves/storage failures
 - [x] Add interactive theater dice, replay reset, exit choreography, and focus containment
 - [x] Run focused tests and desktop/mobile regression flows
+- [x] Correct SVG staff positioning, stems, flags, ledger lines, rests, and chord notation
+- [x] Add notation math regressions and verify representative score bars in preview
