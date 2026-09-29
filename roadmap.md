@@ -10,8 +10,8 @@
 - [x] Replace typed Span wordmarks with the bundled official logo
 - [x] Apply and document the 14 scholarly staff corrections
 - [x] Revalidate all music data and complete final preview checks
-- [ ] Harden versioned share encoding and malformed-link handling
-- [ ] Fix live volume, mute, restart, and playback cancellation races
-- [ ] Correct exported measure IDs and validate local saves/storage failures
-- [ ] Add interactive theater dice, replay reset, exit choreography, and focus containment
-- [ ] Run focused tests and desktop/mobile regression flows
+- [x] Harden versioned share encoding and malformed-link handling
+- [x] Fix live volume, mute, restart, and playback cancellation races
+- [x] Correct exported measure IDs and validate local saves/storage failures
+- [x] Add interactive theater dice, replay reset, exit choreography, and focus containment
+- [x] Run focused tests and desktop/mobile regression flows
