@@ -4397,7 +4397,7 @@ body:has(.paper-story) {
 .paper-story-header .button {
   font-size: 0.65rem;
 }
-.paper-story svg:not(.table-music-ribbon svg) {
+.paper-story .button svg {
   width: 16px;
   height: 16px;
 }
@@ -5159,4 +5159,801 @@ body:has(.paper-story) {
 .chance-room.is-rolling .room-heading {
   opacity: 0;
   transform: translateY(-12px);
+}
+
+/* A single physical throw, rendered without image edges or CSS face seams. */
+.physics-dice-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(720px, 100%);
+  padding: 0 0 16px;
+  border: 0;
+  background: none;
+  color: var(--foreground);
+  cursor: pointer;
+  outline-offset: 5px;
+  touch-action: manipulation;
+}
+.physics-dice-button:disabled {
+  cursor: wait;
+}
+.physics-dice-stage {
+  display: block;
+  width: 100%;
+  height: clamp(265px, 39vw, 380px);
+}
+.physics-dice-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.physics-dice-label {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font: italic 1.5rem var(--font-serif);
+  transition: color 0.2s;
+}
+.physics-dice-label > span {
+  font-size: 1.6rem;
+  color: #907849;
+  transition: transform 0.3s;
+}
+.physics-dice-button:hover:not(:disabled) .physics-dice-label > span {
+  transform: translate(4px, -4px);
+}
+.dice-fallback {
+  position: absolute;
+  inset: 15% 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  font: 140px Georgia;
+  color: #46503a;
+}
+.chance-room.is-revealing .room-heading {
+  opacity: 0;
+}
+.chance-room.is-revealing .roll-sequence {
+  opacity: 1;
+}
+.chance-room.is-revealing .physics-dice-button {
+  pointer-events: none;
+}
+.chance-paper {
+  padding-bottom: 35px;
+}
+.roll-sequence {
+  bottom: 8px;
+}
+.chance-room .roll-caption {
+  margin-top: 14px;
+}
+.chance-footer {
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 24px 0 28px;
+}
+.footer-thought {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.footer-thought > span {
+  font: italic 1rem var(--font-serif);
+  color: #746b55;
+}
+.footer-thought > a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font: 0.56rem var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #596046;
+}
+.footer-thought > a svg {
+  width: 12px;
+  height: 12px;
+}
+.chance-footer .rep-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+  color: #414b35;
+  text-decoration: none;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.rep-contact > span {
+  font: italic 0.92rem var(--font-serif);
+  color: #746b55;
+}
+.rep-contact > strong {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font: 500 1.03rem var(--font-serif);
+  border-bottom: 1px solid #a99a7870;
+  padding-bottom: 4px;
+}
+.rep-contact svg {
+  width: 15px;
+  height: 15px;
+}
+.rep-contact:hover > strong {
+  border-color: #48563b;
+  color: #7e473a;
+}
+/* Each scene is made of separate whole illustrations and independent paper props. */
+.paper-story-art {
+  animation: none;
+  overflow: visible;
+}
+.story-collage {
+  position: absolute;
+  inset: 0;
+  isolation: auto;
+}
+.whole-art {
+  position: absolute;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: multiply;
+  user-select: none;
+  pointer-events: none;
+}
+.collage-annotation {
+  position: absolute;
+  font: italic clamp(0.85rem, 1.7vw, 1.55rem)/1.15 var(--font-serif);
+  color: #89754d;
+}
+.animated-music-slip {
+  position: absolute;
+  background: #fcf4df;
+  color: #414633;
+  padding: 14px 18px 9px;
+  box-shadow: 4px 7px 0 #826d4330;
+  clip-path: polygon(1% 1%, 97% 0, 100% 97%, 4% 100%, 0 77%);
+}
+.animated-music-slip > span {
+  font: italic 1.25rem var(--font-serif);
+}
+.animated-music-slip svg {
+  width: 100%;
+  display: block;
+}
+.animated-music-slip svg g {
+  fill: currentColor;
+  animation: ink-arrives 0.6s calc(0.8s + var(--note) * 0.3s) both;
+}
+.invitation-envelope {
+  position: absolute;
+  top: 11%;
+  right: 5%;
+  width: 50%;
+  height: 33%;
+  background: #e8d7af;
+  box-shadow: 4px 6px 0 #846d3c25;
+  transform: rotate(12deg);
+  animation: envelope-arrives 1s 0.15s both;
+  overflow: hidden;
+}
+.invitation-envelope:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(148deg, transparent 49%, #bdaa7e 49.5%, transparent 50%),
+    linear-gradient(32deg, transparent 49%, #bdaa7e 49.5%, transparent 50%);
+}
+.invitation-envelope > span {
+  position: absolute;
+  top: 19%;
+  left: 22%;
+  font: italic clamp(1rem, 2.7vw, 2.2rem) var(--font-serif);
+  transform: rotate(-5deg);
+}
+.invitation-envelope > i {
+  position: absolute;
+  left: 45%;
+  top: 59%;
+  width: 15%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #884c3e;
+  box-shadow:
+    inset 0 0 0 3px #a36350,
+    1px 2px 1px #77543450;
+}
+.violin-actor {
+  width: 84%;
+  height: 98%;
+  left: -8%;
+  top: 0;
+  transform: rotate(-9deg);
+  animation: violin-arrives 1.4s 0.1s cubic-bezier(0.18, 0.7, 0.22, 1) both;
+}
+.greeting-score {
+  width: 47%;
+  right: 0;
+  bottom: 14%;
+  transform: rotate(9deg);
+  animation: slip-from-right 1s 0.9s both;
+}
+.greeting-annotation {
+  right: 1%;
+  bottom: 3%;
+  transform: rotate(-5deg);
+  animation: ink-arrives 0.7s 2s both;
+}
+.greeting-flourish {
+  position: absolute;
+  right: -1%;
+  top: 44%;
+  width: 48%;
+  color: #8f7348;
+}
+.greeting-flourish path {
+  stroke-dasharray: 1;
+  animation: draw-ink 2s 1.3s both;
+}
+.mozart-actor {
+  width: 91%;
+  height: 91%;
+  left: 3%;
+  top: -4%;
+  animation: portrait-arrives 1.3s both;
+}
+.mozart-score {
+  width: 67%;
+  right: 0;
+  bottom: 1%;
+  transform: rotate(-7deg);
+  animation: manuscript-arrives 1s 0.8s both;
+}
+.mozart-score svg g {
+  animation-delay: calc(1.7s + var(--note) * 0.45s);
+}
+.publication-label {
+  position: absolute;
+  left: -4%;
+  top: 6%;
+  width: 28%;
+  text-align: center;
+  background: #ede2c7;
+  box-shadow: 4px 5px 0 #8b744126;
+  padding: 10px 5px;
+  transform: rotate(-8deg);
+  animation: publication-stamp 0.8s 1.7s both;
+}
+.publication-label small {
+  display: block;
+  font: 0.55rem var(--font-mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.publication-label strong {
+  display: block;
+  font: clamp(2rem, 4.4vw, 4.3rem)/1.1 var(--font-serif);
+  color: #764637;
+}
+.publication-label > span {
+  display: block;
+  font: italic 0.7rem var(--font-serif);
+}
+.composer-annotation {
+  left: -3%;
+  bottom: 13%;
+  transform: rotate(-8deg);
+  animation: ink-arrives 0.8s 3.3s both;
+}
+.hourglass-actor {
+  width: 79%;
+  height: 96%;
+  left: 18%;
+  top: 0;
+  transform-origin: 50% 50%;
+  animation: hourglass-turn 1.75s 0.2s cubic-bezier(0.3, 0.6, 0.2, 1) both;
+}
+.engineering-paper {
+  position: absolute;
+  background: #f8edd7;
+  box-shadow: 4px 6px 0 #99835729;
+  padding: 18px 15px;
+  width: 47%;
+  height: 32%;
+}
+.engineering-paper span {
+  font: italic 1.1rem var(--font-serif);
+}
+.engineering-paper i {
+  display: block;
+  background: #8b876d50;
+  height: 2px;
+  margin-top: 12px;
+  width: 90%;
+}
+.engineering-paper i:nth-child(3) {
+  width: 67%;
+}
+.engineering-paper i:nth-child(4) {
+  width: 81%;
+}
+.report-paper {
+  left: -2%;
+  top: 6%;
+  transform: rotate(-11deg);
+  animation: report-clears 6s both;
+}
+.code-paper {
+  left: -6%;
+  top: 43%;
+  transform: rotate(5deg);
+  animation: code-clears 6s 0.5s both;
+}
+.code-paper i {
+  background: #68745365;
+  width: 77%;
+  margin-left: 9px;
+}
+.returned-time {
+  position: absolute;
+  left: 1%;
+  bottom: 1%;
+  color: #637046;
+  transform: rotate(-6deg);
+  animation: time-returned 1.1s 3.8s both;
+}
+.returned-time > span {
+  font: italic clamp(1.2rem, 2.6vw, 2.25rem) var(--font-serif);
+}
+.returned-time svg {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+}
+.returned-time path {
+  stroke-dasharray: 1;
+  animation: draw-ink 1.3s 4.5s both;
+}
+.hand-actor {
+  width: 95%;
+  height: 82%;
+  top: -8%;
+  left: 8%;
+  transform: rotate(-8deg);
+  animation: hand-releases 5s both;
+}
+.invitation-score {
+  width: 67%;
+  left: 7%;
+  bottom: 4%;
+  transform: rotate(-8deg);
+  animation: invitation-sheet 1s 0.9s both;
+}
+.invitation-die {
+  position: absolute;
+  width: 17%;
+  filter: drop-shadow(3px 5px 1px #6a52212b);
+}
+.invitation-die-one {
+  left: 22%;
+  top: 48%;
+  transform: rotate(-13deg);
+  animation: release-one 2.1s 1.4s both;
+}
+.invitation-die-two {
+  left: 54%;
+  top: 60%;
+  transform: rotate(15deg);
+  animation: release-two 2.4s 1.5s both;
+}
+.invitation-annotation {
+  right: 1%;
+  bottom: 5%;
+  transform: rotate(7deg);
+  animation: ink-arrives 0.8s 3.5s both;
+}
+.story-matrix > .chosen {
+  animation: table-select 0.5s calc(0.7s + var(--column) * 0.22s) both;
+}
+.story-table-art .table-music-ribbon svg g {
+  animation-delay: calc(1.2s + var(--note) * 0.22s);
+}
+.story-table-art .handwritten-note {
+  animation: ink-arrives 0.7s 4.7s both;
+}
+.paper-story.story-paused * {
+  animation: none !important;
+}
+.turning-scene .paper-story-art {
+  opacity: 0;
+  translate: 12px -18px;
+  transition:
+    opacity 0.46s,
+    translate 0.46s;
+}
+.paper-story-art {
+  transition:
+    opacity 0.46s,
+    translate 0.46s;
+}
+@keyframes envelope-arrives {
+  from {
+    opacity: 0;
+    translate: 80px -35px;
+    rotate: 12deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes violin-arrives {
+  from {
+    opacity: 0;
+    translate: -90px 60px;
+    rotate: -12deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes slip-from-right {
+  from {
+    opacity: 0;
+    translate: 100px 35px;
+    rotate: 12deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes ink-arrives {
+  from {
+    opacity: 0;
+    translate: 0 9px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes draw-ink {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes portrait-arrives {
+  from {
+    opacity: 0;
+    translate: 50px 70px;
+    rotate: 7deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes manuscript-arrives {
+  from {
+    opacity: 0;
+    translate: -75px 70px;
+    rotate: -15deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes publication-stamp {
+  0% {
+    opacity: 0;
+    scale: 1.5;
+    rotate: -10deg;
+  }
+  70% {
+    opacity: 1;
+    scale: 0.96;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+@keyframes hourglass-turn {
+  0% {
+    opacity: 0;
+    rotate: -175deg;
+    translate: 50px 20px;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    rotate: 0deg;
+    translate: 0 0;
+  }
+}
+@keyframes report-clears {
+  0% {
+    opacity: 0;
+    translate: -70px 45px;
+  }
+  18%,
+  48% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  100% {
+    opacity: 0.25;
+    translate: -20px -36px;
+    rotate: -13deg;
+  }
+}
+@keyframes code-clears {
+  0% {
+    opacity: 0;
+    translate: -65px 35px;
+  }
+  18%,
+  42% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  100% {
+    opacity: 0.25;
+    translate: -20px 32px;
+    rotate: 13deg;
+  }
+}
+@keyframes time-returned {
+  from {
+    opacity: 0;
+    translate: 0 25px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes hand-releases {
+  0% {
+    opacity: 0;
+    translate: 100px -45px;
+    rotate: -8deg;
+  }
+  22%,
+  40% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  70%,
+  100% {
+    opacity: 1;
+    translate: 20px -35px;
+    rotate: 8deg;
+  }
+}
+@keyframes invitation-sheet {
+  from {
+    opacity: 0;
+    translate: -50px 55px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes release-one {
+  0% {
+    opacity: 0;
+    translate: 40px -80px;
+    rotate: -140deg;
+    scale: 0.75;
+  }
+  10% {
+    opacity: 1;
+  }
+  55% {
+    translate: -8px 9px;
+    rotate: -25deg;
+    scale: 1;
+  }
+  75% {
+    translate: -4px -17px;
+    rotate: -9deg;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+    scale: 1;
+  }
+}
+@keyframes release-two {
+  0% {
+    opacity: 0;
+    translate: -80px -130px;
+    rotate: -190deg;
+    scale: 0.8;
+  }
+  10% {
+    opacity: 1;
+  }
+  57% {
+    translate: 14px 9px;
+    rotate: -50deg;
+    scale: 1;
+  }
+  77% {
+    translate: 9px -18px;
+    rotate: -14deg;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+    scale: 1;
+  }
+}
+@keyframes table-select {
+  from {
+    background: transparent;
+    color: inherit;
+  }
+  to {
+    background: #49513c;
+    color: #fff3d7;
+  }
+}
+@media (max-width: 700px) {
+  .physics-dice-stage {
+    height: 245px;
+  }
+  .physics-dice-label {
+    font-size: 1.3rem;
+  }
+  .chance-footer {
+    padding: 23px 4px;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .footer-thought {
+    align-items: center;
+  }
+  .chance-footer .rep-contact {
+    align-items: center;
+  }
+  .rep-contact > span {
+    font-size: 0.83rem;
+  }
+  .rep-contact > strong {
+    font-size: 1.02rem;
+  }
+  .paper-story-art,
+  .story-scene-3 .paper-story-art {
+    width: min(68vw, 285px);
+    max-width: 285px;
+  }
+  .story-scene-2 .paper-story-art {
+    width: 75vw;
+    max-width: 300px;
+  }
+  .animated-music-slip {
+    padding: 7px 10px 5px;
+  }
+  .animated-music-slip > span {
+    font-size: 0.8rem;
+  }
+  .publication-label {
+    padding: 6px 3px;
+  }
+  .publication-label small {
+    font-size: 0.35rem;
+  }
+  .publication-label > span {
+    font-size: 0.44rem;
+  }
+  .engineering-paper {
+    padding: 10px;
+  }
+  .engineering-paper span {
+    font-size: 0.67rem;
+  }
+  .engineering-paper i {
+    margin-top: 7px;
+    height: 1px;
+  }
+  .collage-annotation {
+    font-size: 0.88rem;
+  }
+  .returned-time > span {
+    font-size: 1.3rem;
+  }
+  .returned-time svg {
+    max-width: 135px;
+  }
+}
+@media (max-height: 740px) and (max-width: 700px) {
+  .paper-story-art,
+  .story-scene-3 .paper-story-art {
+    width: 48vw;
+    max-width: 200px;
+  }
+  .story-scene-2 .paper-story-art {
+    width: 55vw;
+    max-width: 230px;
+  }
+  .collage-annotation {
+    font-size: 0.69rem;
+  }
+  .engineering-paper span {
+    font-size: 0.49rem;
+  }
+  .engineering-paper i {
+    margin-top: 5px;
+  }
+  .publication-label strong {
+    font-size: 1.7rem;
+  }
+  .invitation-envelope > span {
+    font-size: 0.85rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paper-story .story-collage *,
+  .paper-story .story-table-art * {
+    animation: none !important;
+    opacity: 1;
+    translate: none;
+    rotate: none;
+    scale: none;
+  }
+  .greeting-flourish path,
+  .returned-time path {
+    stroke-dashoffset: 0;
+  }
+}
+
+.paper-story .animated-music-slip svg {
+  width: 100%;
+  height: auto;
+}
+.paper-story .greeting-flourish {
+  width: 48%;
+  height: auto;
+}
+.paper-story .returned-time svg {
+  width: 100%;
+  height: auto;
+}
+.paper-story .invitation-die {
+  width: 17%;
+  height: auto;
 }
