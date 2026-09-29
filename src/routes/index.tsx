@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { Composer } from "../components/Composer";
 import { Theater } from "../components/Theater";
+import { decodeShare } from "../lib/music";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
