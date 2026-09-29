@@ -1,5 +1,6 @@
 import { compositionMeasures, eventDuration, pitchToMidi, arrangementFor, type Composition, type PlayerInstrument } from "./music";
 import { SAMPLE_MANIFEST, nearestSample } from "./sampleManifest";
+import { arrangeMeasure } from "./orchestration";
 
 export type AudioLoadState = "idle"|"loading"|"ready"|"error";
 interface ActiveAudio { context: AudioContext; master: GainNode; nodes: Set<AudioBufferSourceNode>; timer?: number; generation: number }
@@ -37,7 +38,7 @@ export async function playComposition(composition:Composition,volume:number,onPr
   const loaded=new Map<string,AudioBuffer>();for(const instrument of new Set(instruments))for(const sample of SAMPLE_MANIFEST[instrument])loaded.set(sample.url,await decodeSample(context,sample.url));
   if(generation!==ownGeneration||active?.generation!==ownGeneration){await context.close().catch(()=>undefined);return}
   const pulse=60/composition.tempo;const startAt=context.currentTime+.08;const measures=compositionMeasures(composition.totals);
-  const roles=[{staff:"treble" as const,instrument:arrangement.melody,level:arrangement.levels[0],muted:arrangement.muted[0],pan:-.12,lowest:false},{staff:"bass" as const,instrument:arrangement.accompaniment,level:arrangement.levels[1],muted:arrangement.muted[1],pan:.12,lowest:false},...(arrangement.bass?[{staff:"bass" as const,instrument:arrangement.bass,level:arrangement.levels[2],muted:arrangement.muted[2],pan:.02,lowest:true}]:[])];
-  for(const role of roles){if(role.muted)continue;const panner=context.createStereoPanner();panner.pan.value=role.pan;panner.connect(dry);measures.forEach((measure,bar)=>{let cursor=0;measure[role.staff].forEach(event=>{const pulses=eventDuration(event);const first=event[0];if(typeof first!=="number"){let pitches=Array.isArray(first)?first:[first];if(role.lowest)pitches=[pitches.reduce((low,pitch)=>pitchToMidi(pitch)<pitchToMidi(low)?pitch:low)];for(const pitch of pitches){const midi=pitchToMidi(pitch);const sample=nearestSample(role.instrument,midi);const buffer=loaded.get(sample.url);if(buffer)scheduleSample(context,panner,role.instrument,midi,startAt+(bar*3+cursor)*pulse,pulses*pulse*.92,role.level,nodes,buffer,sample.midi)}}cursor+=pulses})})}
+  const roleIndex={melody:0,accompaniment:1,bass:2} as const;const rolePan={melody:-.12,accompaniment:.12,bass:.02} as const;const panners=new Map<string,StereoPannerNode>();
+  measures.forEach((measure,bar)=>{for(const note of arrangeMeasure(measure,arrangement)){if(arrangement.muted[roleIndex[note.role]])continue;let panner=panners.get(note.role);if(!panner){panner=context.createStereoPanner();panner.pan.value=rolePan[note.role];panner.connect(dry);panners.set(note.role,panner)}const sample=nearestSample(note.instrument,note.midi);const buffer=loaded.get(sample.url);if(buffer)scheduleSample(context,panner,note.instrument,note.midi,startAt+(bar*3+note.startPulse)*pulse,note.durationPulses*pulse*.92,note.level,nodes,buffer,sample.midi)}});
   const totalSeconds=48*pulse;active.timer=window.setInterval(()=>{const elapsed=Math.max(0,context.currentTime-startAt);const progress=Math.min(1,elapsed/totalSeconds);onProgress(Math.min(15,Math.floor(elapsed/(pulse*3))),progress);if(progress>=1&&active?.generation===ownGeneration){stopAudio();onEnd()}},50);
 }
