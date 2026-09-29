@@ -17,10 +17,10 @@
 - [x] Run focused tests and desktop/mobile regression flows
 - [x] Correct SVG staff positioning, stems, flags, ledger lines, rests, and chord notation
 - [x] Add notation math regressions and verify representative score bars in preview
-- [ ] Replace synthesized tones with credited local recorded-instrument samples
-- [ ] Add backward-compatible orchestration, mixer, save, share, and export data
-- [ ] Rebuild the main workspace around animated tactile dice and sampled playback states
-- [ ] Replace the tempo slider with an accessible walnut mechanical metronome
-- [ ] Rebuild the introduction as a four-scene choreographed paper theater
-- [ ] Move saved works into a compact drawer and add the restrained Src footer story
-- [ ] Run audio, serialization, desktop, mobile, intro, and cancellation regression checks
+- [x] Replace synthesized tones with credited local recorded-instrument samples
+- [x] Add backward-compatible orchestration, mixer, save, share, and export data
+- [x] Rebuild the main workspace around animated tactile dice and sampled playback states
+- [x] Replace the tempo slider with an accessible walnut mechanical metronome
+- [x] Rebuild the introduction as a four-scene choreographed paper theater
+- [x] Move saved works into a compact drawer and add the restrained Src footer story
+- [x] Run audio, serialization, desktop, mobile, intro, and cancellation regression checks
