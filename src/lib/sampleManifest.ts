@@ -19,5 +19,7 @@ export const SAMPLE_MANIFEST = Object.fromEntries(Object.entries(notes).map(([in
 
 export function nearestSample(instrument: PlayerInstrument, midi: number): SampleDefinition {
   const available = SAMPLE_MANIFEST[instrument];
-  return available.reduce((best, item) => Math.abs(item.midi-midi) < Math.abs(best.midi-midi) ? item : best, available[0]);
+  const first=available[0];
+  if(!first) throw new Error(`No recorded samples configured for ${instrument}.`);
+  return available.reduce((best, item) => Math.abs(item.midi-midi) < Math.abs(best.midi-midi) ? item : best, first);
 }
