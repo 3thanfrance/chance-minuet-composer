@@ -5151,3 +5151,12 @@ body:has(.paper-story) {
     width: 44vw;
   }
 }
+.chance-room .room-heading {
+  transition:
+    opacity 0.28s,
+    transform 0.35s;
+}
+.chance-room.is-rolling .room-heading {
+  opacity: 0;
+  transform: translateY(-12px);
+}
