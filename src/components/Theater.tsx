@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import spanLogo from "../assets/span-logo.svg";
 import { ChevronRight, FastForward, Play } from "lucide-react";
 import mozartPuppet from "../assets/mozart-puppet.png";
 import theaterProps from "../assets/theater-props.png";
@@ -23,7 +24,7 @@ export function Theater({ open, onClose }: { open: boolean; onClose: () => void 
   if (!activeScene) return null;
   const close = () => { localStorage.setItem("chance-music-intro", "seen"); onClose(); };
   return <section className="theater-overlay" aria-label="A Little Chance Music introduction" aria-modal="true" role="dialog">
-    <div className="theater-top"><span className="wordmark">span</span><Button autoFocus variant="ghost" onClick={close}><FastForward size={15}/> Skip to composing</Button></div>
+    <div className="theater-top"><img className="span-logo span-logo-inverse" src={spanLogo} alt="Span" width={110} height={26}/><Button autoFocus variant="ghost" onClick={close}><FastForward size={15}/> Skip to composing</Button></div>
     <div className="proscenium" data-scene={started ? scene : "closed"}>
       <div className="curtain curtain-left"/><div className="curtain curtain-right"/>
       <div className="stage-title"><span>A private paper theatre</span><b>A Little Chance Music</b></div>
