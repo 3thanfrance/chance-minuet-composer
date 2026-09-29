@@ -1,10 +1,10 @@
 <!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
+> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting published git history.
 <!-- LOVABLE:END -->
+
+- Keep the historical Mozart dataset bundled in `src/data/mozart.ts`; runtime network access must never be required for music.
+- Use IDs 1–176 only; source ID 177 is an auxiliary ending outside this 16-bar single-pass experience.
+- The lookup table follows the independently verified Princeton matrix, including total 4 / position 10 = 139.
+- Generate every choice from two independent d6 values; never sample totals uniformly.
+- Keep audio browser-native and client-only so playback remains private, immediate, and deployment-safe.
