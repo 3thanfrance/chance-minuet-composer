@@ -10,6 +10,16 @@ const notes = {
   harp: ["E1","G1","B1","D2","F2","A2","C3","E3","G3","B3","D4","F4","A4","C5","E5","G5","B5","D6"],
 } as const satisfies Record<PlayerInstrument, readonly string[]>;
 
+// VCSL's Zuckermann filenames use C3 for a measured 261.3 Hz sample.
+// The bundled files were therefore renamed one octave higher (source C3 → C4)
+// so these roots remain scientific pitch/MIDI-correct during transposition.
+export const VCSL_HARPSICHORD_OCTAVE_OFFSET = 1;
+export function vcslHarpsichordSourceToScientific(sourceNote: string): string | null {
+  const match = /^([A-G](?:#)?)(\d)$/.exec(sourceNote);
+  if (!match?.[1] || !match[2]) return null;
+  return `${match[1].replace("#", "s")}${Number(match[2]) + VCSL_HARPSICHORD_OCTAVE_OFFSET}`;
+}
+
 export interface SampleDefinition { url: string; midi: number; note: string }
 export const SAMPLE_MANIFEST = Object.fromEntries(Object.entries(notes).map(([instrument, instrumentNotes]) => [instrument, instrumentNotes.map((note) => ({
   note,
