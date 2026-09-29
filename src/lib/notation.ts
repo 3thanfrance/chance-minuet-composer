@@ -24,10 +24,9 @@ export function flagCount(denominator: number): number {
   return 0;
 }
 
-export function restGlyph(denominator: number): string {
-  if (denominator >= 16) return "𝄿";
-  if (denominator >= 8) return "𝄾";
-  return "𝄽";
+export function pitchAccidental(pitch: string): "#" | "b" | null {
+  const match = /^[a-g]([#b])?-?\d+$/i.exec(pitch);
+  return match?.[1] === "#" || match?.[1] === "b" ? match[1] : null;
 }
 
 export function ledgerLineYs(y: number, staff: "treble" | "bass"): number[] {
