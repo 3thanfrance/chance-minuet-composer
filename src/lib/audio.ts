@@ -1,4 +1,4 @@
-import { compositionMeasures, eventDuration, pitchToMidi, arrangementFor, type Composition, type PlayerInstrument } from "./music";
+import { compositionMeasures, arrangementFor, type Composition, type PlayerInstrument } from "./music";
 import { SAMPLE_MANIFEST, nearestSample } from "./sampleManifest";
 import { arrangeMeasure } from "./orchestration";
 
