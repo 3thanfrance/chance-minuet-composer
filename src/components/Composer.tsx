@@ -24,6 +24,7 @@ import {
   preloadInstrument,
   renderCompositionWav,
   setAudioLevel,
+  setRoleLevel,
   stopAudio,
   unlockAudio,
   type AudioLoadState,
@@ -38,40 +39,38 @@ import {
   isValidComposition,
   measureId,
   rollComposition,
+  PLAYER_INSTRUMENTS,
   type Arrangement,
+  type PlayerInstrument,
   type Composition,
   type DicePair,
 } from "../lib/music";
 
 const SAVE_KEY = "chance-music-saves-v1";
-const SOUNDS = [
-  { id: "piano", label: "Grand piano", arrangement: ARRANGEMENTS["solo-piano"] },
-  { id: "harpsichord", label: "Harpsichord", arrangement: ARRANGEMENTS["solo-harpsichord"] },
-  { id: "harp", label: "Harp", arrangement: ARRANGEMENTS["solo-harp"] },
+const INSTRUMENT_NAMES: Record<PlayerInstrument, string> = {
+  piano: "Grand piano",
+  harpsichord: "Harpsichord",
+  harp: "Harp",
+  violin: "Violin",
+  cello: "Cello",
+  flute: "Flute",
+  clarinet: "Clarinet",
+};
+const LAYERS = [
+  { role: "melody", label: "Melody", detail: "The leading voice", choices: [...PLAYER_INSTRUMENTS] },
   {
-    id: "violin",
-    label: "Violin & harpsichord",
-    arrangement: { ...ARRANGEMENTS.chamber, bass: null, levels: [0.9, 0.7, 0], muted: [false, false, true] },
+    role: "accompaniment",
+    label: "Accompaniment",
+    detail: "The harmony underneath",
+    choices: ["piano", "harpsichord", "harp"],
   },
   {
-    id: "flute",
-    label: "Flute & harp",
-    arrangement: { ...ARRANGEMENTS.air, bass: null, levels: [0.88, 0.72, 0], muted: [false, false, true] },
+    role: "bass",
+    label: "Bass",
+    detail: "A little extra depth",
+    choices: ["cello", "piano", "harpsichord", "harp", "clarinet"],
   },
-  { id: "clarinet", label: "Clarinet & piano", arrangement: ARRANGEMENTS.woodwinds },
-  { id: "strings", label: "Violin, cello & piano", arrangement: { ...ARRANGEMENTS.chamber, accompaniment: "piano" } },
-] satisfies { id: string; label: string; arrangement: Arrangement }[];
-function soundFor(c: Composition) {
-  const a = arrangementFor(c);
-  return (
-    SOUNDS.find(
-      (s) =>
-        s.arrangement.melody === a.melody &&
-        s.arrangement.accompaniment === a.accompaniment &&
-        s.arrangement.bass === a.bass,
-    )?.id ?? "custom"
-  );
-}
+] as const;
 function initialComposition(): Composition {
   return {
     totals: [...DEFAULT_TOTALS],
@@ -155,8 +154,10 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
   }, []);
   useEffect(() => setAudioLevel(volume, false), [volume]);
   const play = useCallback(
-    async (target: Composition = current.current) => {
+    async (target: Composition = current.current, fromProgress = 0) => {
       stop();
+      setProgress(fromProgress);
+      setPlayingBar(fromProgress > 0 ? Math.min(15, Math.floor(fromProgress * 16)) : null);
       const own = ++request.current;
       setStatus("");
       try {
@@ -182,10 +183,12 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
           () => {
             if (own === request.current) setPlaying(true);
           },
+          fromProgress,
         );
       } catch {
         if (own === request.current) {
           setAudioState("error");
+          setPlayingBar(null);
           setStatus("Couldn’t load the sound. Try Play again.");
         }
       }
@@ -222,13 +225,17 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
             () => {
               if (own === request.current) {
                 setRollCount(i + 1);
-                setDisplayDice(next.dice[i] ?? [3, 4]);
               }
             },
-            350 + i * 155,
+            350 + i * 140,
           ),
         );
-    const settle = mode === "roll" ? 2950 : 350;
+    const settle = mode === "roll" ? 2850 : 350;
+    timers.current.push(
+      window.setTimeout(() => {
+        if (own === request.current) setDisplayDice(next.dice[15] ?? [3, 4]);
+      }, settle - 100),
+    );
     timers.current.push(
       window.setTimeout(() => {
         if (own === request.current) {
@@ -241,13 +248,40 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
       }, settle + 650),
     );
   };
-  const changeSound = (id: string) => {
-    const sound = SOUNDS.find((s) => s.id === id);
-    if (!sound) return;
-    const next = { ...current.current, arrangement: sound.arrangement };
+  const changeLayer = (role: "melody" | "accompaniment" | "bass", value: string) => {
+    const a = arrangementFor(current.current);
+    const index = role === "melody" ? 0 : role === "accompaniment" ? 1 : 2;
+    const levels = [...a.levels] as [number, number, number];
+    const muted = [...a.muted] as [boolean, boolean, boolean];
+    if (value !== "none" && role === "bass" && a.bass === null) {
+      levels[index] = 0.4;
+      muted[index] = false;
+    }
+    const next = {
+      ...current.current,
+      arrangement: { ...a, [role]: value === "none" ? null : value, levels, muted },
+    } as Composition;
     setComposition(next);
     current.current = next;
-    void play(next);
+    if (busy) void play(next, progress);
+    else if (value !== "none") void preloadInstrument(value as PlayerInstrument).catch(() => undefined);
+  };
+  const mixLayer = (index: number, level: number, muted: boolean) => {
+    const a = arrangementFor(current.current);
+    const levels = [...a.levels] as [number, number, number];
+    const mutes = [...a.muted] as [boolean, boolean, boolean];
+    levels[index] = level;
+    mutes[index] = muted;
+    const next = { ...current.current, arrangement: { ...a, levels, muted: mutes } };
+    setComposition(next);
+    current.current = next;
+    setRoleLevel(LAYERS[index]!.role, level, muted);
+  };
+  const changeTempo = (tempo: number) => {
+    const next = { ...current.current, tempo };
+    setComposition(next);
+    current.current = next;
+    if (busy) void play(next, progress);
   };
   const save = () => {
     const nextName = window.prompt("Name your minuet", name)?.trim();
@@ -311,6 +345,7 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
     requestAnimationFrame(() => document.getElementById("roll-title")?.focus());
   };
   const busy = playing || audioState === "loading";
+  const arrangement = arrangementFor(composition);
   return (
     <main className={`chance-app ${screen === "roll" ? "at-table" : "at-score"}`} id="composer" tabIndex={-1}>
       <header className="chance-header">
@@ -345,7 +380,7 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
           <div className="room-heading">
             <p className="kicker">A Little Chance Music</p>
             <h1 id="roll-title" tabIndex={-1}>
-              Let chance compose.
+              Your turn, Bob.
             </h1>
           </div>
           <div className="mode-switch" role="tablist" aria-label="Composition method">
@@ -367,12 +402,11 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
             </button>
           </div>
           <div className="chance-table">
-            <div className="felt-stage">
-              <div className="felt-border" />
+            <div className="chance-paper">
               {mode === "roll" ? (
                 <>
-                  <DiceButton values={displayDice} rolling={rolling} onRoll={compose} label="Roll your minuet" />
-                  <div className="roll-sequence" aria-hidden="true">
+                  <DiceButton values={displayDice} rolling={rolling} onRoll={compose} label="Roll the dice" />
+                  <div className={`roll-sequence ${rolling || revealing ? "visible" : ""}`} aria-hidden="true">
                     {Array.from({ length: 16 }, (_, i) => (
                       <span className={i < rollCount ? "arrived" : ""} key={i}>
                         {i < rollCount ? composition.totals[i] : "·"}
@@ -420,19 +454,9 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
                   : rolling
                     ? `Choosing measure ${Math.max(1, rollCount)} of 16`
                     : mode === "roll"
-                      ? "Two dice. Sixteen measures. Yours."
+                      ? "Sixteen choices. One minuet, just for you."
                       : "One dice total for each measure."}
               </p>
-            </div>
-            <div className="tempo-station">
-              <Metronome
-                tempo={composition.tempo}
-                playing={rolling}
-                onChange={(tempo) => {
-                  if (!rolling && !revealing) setComposition((c) => ({ ...c, tempo }));
-                }}
-              />
-              <span>Slide the weight</span>
             </div>
           </div>
           {(rolling || revealing) && (
@@ -485,22 +509,7 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
               {busy ? <Square /> : <Play />}
               {audioState === "loading" ? "Cancel loading" : playing ? "Stop" : "Play"}
             </Button>
-            <label className="sound-choice">
-              <span>Sound</span>
-              <select
-                aria-label="Instrument"
-                value={soundFor(composition)}
-                onChange={(e) => changeSound(e.target.value)}
-              >
-                {soundFor(composition) === "custom" && <option value="custom">Saved arrangement</option>}
-                {SOUNDS.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <span className="piece-tempo">♪ {composition.tempo}</span>
+            <span className="listen-caption">{playing ? "Follow the music." : "Make it sound like you."}</span>
             <label className="listening-volume">
               <Volume2 />
               <input
@@ -529,8 +538,78 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
               {status}
             </p>
           )}
-          <div className="score-arrival">
-            <Score totals={composition.totals} selected={selected} playing={playingBar} onSelect={setSelected} />
+          <div className="music-desk">
+            <div className="music-pages">
+              <div className="score-arrival">
+                <Score
+                  totals={composition.totals}
+                  selected={selected}
+                  playing={playingBar}
+                  progress={progress}
+                  onSelect={(position) => {
+                    setSelected(position);
+                    if (playing) void play(current.current, position / 16);
+                  }}
+                />
+              </div>
+              <section className="voice-layers" aria-label="Choose instruments for each layer">
+                {LAYERS.map((layer, index) => {
+                  const instrument = arrangement[layer.role];
+                  const disabled = instrument === null;
+                  return (
+                    <div className={`voice-layer ${disabled ? "layer-off" : ""}`} key={layer.role}>
+                      <div className="voice-label">
+                        <span className="layer-roman">{["I", "II", "III"][index]}</span>
+                        <div>
+                          <label htmlFor={`voice-${layer.role}`}>{layer.label}</label>
+                          <small>{layer.detail}</small>
+                        </div>
+                        <button
+                          className="layer-mute"
+                          aria-label={`${arrangement.muted[index] ? "Unmute" : "Mute"} ${layer.label.toLowerCase()}`}
+                          aria-pressed={arrangement.muted[index]}
+                          disabled={disabled}
+                          onClick={() => mixLayer(index, arrangement.levels[index]!, !arrangement.muted[index])}
+                        >
+                          <Volume2 />
+                          <span>{arrangement.muted[index] ? "Off" : "On"}</span>
+                        </button>
+                      </div>
+                      <select
+                        id={`voice-${layer.role}`}
+                        aria-label={`${layer.label} instrument`}
+                        value={instrument ?? "none"}
+                        onChange={(e) => changeLayer(layer.role, e.target.value)}
+                      >
+                        {layer.role === "bass" && <option value="none">No added bass</option>}
+                        {![...layer.choices].includes(instrument as never) && instrument && (
+                          <option value={instrument}>{INSTRUMENT_NAMES[instrument]}</option>
+                        )}
+                        {layer.choices.map((v) => (
+                          <option key={v} value={v}>
+                            {INSTRUMENT_NAMES[v]}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        aria-label={`${layer.label} level`}
+                        type="range"
+                        min="0"
+                        max="1"
+                        step=".01"
+                        disabled={disabled}
+                        value={arrangement.levels[index]}
+                        onChange={(e) => mixLayer(index, Number(e.target.value), arrangement.muted[index]!)}
+                      />
+                    </div>
+                  );
+                })}
+              </section>
+            </div>
+            <aside className="tempo-at-score">
+              <span className="kicker">Set the pace</span>
+              <Metronome tempo={composition.tempo} playing={playing} onChange={changeTempo} />
+            </aside>
           </div>
           <section className="your-path">
             <div className="path-title">
