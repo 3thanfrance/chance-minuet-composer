@@ -7,3 +7,6 @@
 - [x] Build saves, JSON export, share URLs, and About table
 - [x] Add metadata, favicon, accessibility, and responsive styling
 - [x] Test data, sharing, storage, audio controls, desktop, and mobile preview
+- [x] Replace typed Span wordmarks with the bundled official logo
+- [x] Apply and document the 14 scholarly staff corrections
+- [x] Revalidate all music data and complete final preview checks

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import spanLogo from "../assets/span-logo.svg";
 import { BookOpen, Download, ExternalLink, HelpCircle, Music2, Pause, Play, RefreshCw, Save, Share2, Trash2, Volume2, VolumeX } from "lucide-react";
 import { About } from "./About";
 import { Button } from "./Button";
@@ -34,7 +35,7 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
   const selectedTotal=composition.totals[selected] ?? 7; const selectedDice=composition.dice[selected] ?? [3,4];
   const currentId=useMemo(()=>measureId(selected,selectedTotal),[selected,selectedTotal]);
   return <main className="desk" id="composer" tabIndex={-1}>
-    <header className="site-header"><a href="https://www.span.app/" target="_blank" rel="noreferrer" className="wordmark" aria-label="Span website">span</a><nav><Button variant="ghost" onClick={onReplay}><RefreshCw size={15}/> Replay intro</Button><Button variant="ghost" onClick={()=>setAbout(true)}><HelpCircle size={15}/> About</Button></nav></header>
+    <header className="site-header"><a href="https://www.span.app/" target="_blank" rel="noreferrer" className="span-logo-link" aria-label="Span website"><img className="span-logo" src={spanLogo} alt="Span" width={110} height={26}/></a><nav><Button variant="ghost" onClick={onReplay}><RefreshCw size={15}/> Replay intro</Button><Button variant="ghost" onClick={()=>setAbout(true)}><HelpCircle size={15}/> About</Button></nav></header>
     <section className="title-block"><p className="kicker">A musical offering · No. 01</p><h1>Your minuet, Bob</h1><p className="dedication">A little chance music, for Bob Pisani.</p><div className="ornament" aria-hidden="true">✦</div></section>
     <section className="workbench" aria-label="Minuet composer">
       <div className="mode-switch" role="tablist" aria-label="Composition method"><button role="tab" aria-selected={mode==="roll"} onClick={()=>setMode("roll")}>Roll the dice</button><button role="tab" aria-selected={mode==="manual"} onClick={()=>setMode("manual")}>Choose the numbers</button></div>
