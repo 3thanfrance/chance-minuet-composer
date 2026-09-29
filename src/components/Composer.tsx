@@ -57,7 +57,12 @@ const INSTRUMENT_NAMES: Record<PlayerInstrument, string> = {
   clarinet: "Clarinet",
 };
 const LAYERS = [
-  { role: "melody", label: "Melody", detail: "The leading voice", choices: [...PLAYER_INSTRUMENTS] },
+  {
+    role: "melody",
+    label: "Melody",
+    detail: "The leading voice",
+    choices: [...PLAYER_INSTRUMENTS],
+  },
   {
     role: "accompaniment",
     label: "Accompaniment",
@@ -207,46 +212,36 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
     requestAnimationFrame(() => document.getElementById("result-title")?.focus());
     void play(next);
   };
+  const finishRoll = () => {
+    const own = request.current;
+    setRollCount(16);
+    setRolling(false);
+    setRevealing(true);
+    timers.current.push(
+      window.setTimeout(() => {
+        if (own === request.current) showResult(current.current);
+      }, 900),
+    );
+  };
   const compose = () => {
     if (rolling || revealing) return;
     void unlockAudio().catch(() => undefined);
     stop();
     setStatus("");
-    const own = ++request.current;
     const next = mode === "roll" ? { ...current.current, ...rollComposition() } : current.current;
     setRollCount(0);
-    setRolling(true);
     setComposition(next);
     current.current = next;
-    if (mode === "roll")
-      for (let i = 0; i < 16; i++)
-        timers.current.push(
-          window.setTimeout(
-            () => {
-              if (own === request.current) {
-                setRollCount(i + 1);
-              }
-            },
-            350 + i * 140,
-          ),
-        );
-    const settle = mode === "roll" ? 2850 : 350;
-    timers.current.push(
-      window.setTimeout(() => {
-        if (own === request.current) setDisplayDice(next.dice[15] ?? [3, 4]);
-      }, settle - 100),
-    );
-    timers.current.push(
-      window.setTimeout(() => {
-        if (own === request.current) {
-          setRolling(false);
-          setRevealing(true);
-        }
-      }, settle),
-      window.setTimeout(() => {
-        if (own === request.current) showResult(next);
-      }, settle + 650),
-    );
+    setDisplayDice(next.dice[15] ?? [3, 4]);
+    setRolling(true);
+    if (mode === "choose") {
+      const own = request.current;
+      timers.current.push(
+        window.setTimeout(() => {
+          if (own === request.current) finishRoll();
+        }, 250),
+      );
+    }
   };
   const changeLayer = (role: "melody" | "accompaniment" | "bass", value: string) => {
     const a = arrangementFor(current.current);
@@ -405,7 +400,14 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
             <div className="chance-paper">
               {mode === "roll" ? (
                 <>
-                  <DiceButton values={displayDice} rolling={rolling} onRoll={compose} label="Roll the dice" />
+                  <DiceButton
+                    values={displayDice}
+                    rolling={rolling}
+                    onRoll={compose}
+                    onSettled={finishRoll}
+                    onProgress={setRollCount}
+                    label="Roll the dice"
+                  />
                   <div className={`roll-sequence ${rolling || revealing ? "visible" : ""}`} aria-hidden="true">
                     {Array.from({ length: 16 }, (_, i) => (
                       <span className={i < rollCount ? "arrived" : ""} key={i}>
@@ -625,10 +627,18 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
         </section>
       )}
       <footer className="chance-footer">
-        <span>Good systems give time back.</span>
-        <a href="https://www.span.app/platform/src" target="_blank" rel="noreferrer">
-          Meet Src by Span
-          <ArrowRight />
+        <div className="footer-thought">
+          <span>Good systems give time back.</span>
+          <a href="https://www.span.app/platform/src" target="_blank" rel="noreferrer">
+            Meet Src by Span
+            <ArrowRight />
+          </a>
+        </div>
+        <a className="rep-contact" href="mailto:jzac.stein@span.app">
+          <span>Let’s make room for what matters.</span>
+          <strong>
+            jzac.stein@span.app <ArrowRight />
+          </strong>
         </a>
       </footer>
       <About open={about} onClose={() => setAbout(false)} totals={composition.totals} />
