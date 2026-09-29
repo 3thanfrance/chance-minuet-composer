@@ -198,6 +198,7 @@ export async function playComposition(
   onEnd: () => void,
   onLoadState?: (state: AudioLoadState) => void,
   onStarted?: () => void,
+  fromProgress = 0,
 ) {
   stopAudio();
   const ownGeneration = generation;
@@ -239,19 +240,22 @@ export async function playComposition(
   onStarted?.();
   const pulse = 60 / composition.tempo;
   const startAt = context.currentTime + 0.08;
+  const offsetSeconds = Math.min(0.9999, Math.max(0, fromProgress)) * 48 * pulse;
   const measures = compositionMeasures(composition.totals);
   measures.forEach((measure, bar) => {
     for (const note of arrangeMeasure(measure, arrangement)) {
       const sample = nearestSample(note.instrument, note.midi);
       const buffer = loaded.get(sample.url);
-      if (buffer)
+      const onset = (bar * 3 + note.startPulse) * pulse;
+      const end = onset + note.durationPulses * pulse * 0.92;
+      if (buffer && end > offsetSeconds)
         scheduleSample(
           context,
           roleGains[note.role],
           note.instrument,
           note.midi,
-          startAt + (bar * 3 + note.startPulse) * pulse,
-          note.durationPulses * pulse * 0.92,
+          startAt + Math.max(0, onset - offsetSeconds),
+          end - Math.max(onset, offsetSeconds),
           nodes,
           buffer,
           sample.midi,
@@ -262,7 +266,7 @@ export async function playComposition(
   const finishSeconds = playbackDuration(composition);
   active.timer = window.setInterval(() => {
     if (generation !== ownGeneration) return;
-    const elapsed = Math.max(0, context.currentTime - startAt);
+    const elapsed = offsetSeconds + Math.max(0, context.currentTime - startAt);
     onProgress(Math.min(15, Math.floor(elapsed / (pulse * 3))), Math.min(1, elapsed / scoreSeconds));
     if (elapsed >= finishSeconds && active?.generation === ownGeneration) {
       stopAudio();
