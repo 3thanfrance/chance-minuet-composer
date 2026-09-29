@@ -1,6 +1,12 @@
 import { MEASURES } from "../data/mozart";
 import { eventDuration, measureId } from "../lib/music";
-import { eventDenominator, flagCount, ledgerLineYs, restGlyph, staffPitchY } from "../lib/notation";
+import { eventDenominator, flagCount, ledgerLineYs, pitchAccidental, staffPitchY } from "../lib/notation";
+
+function RestSymbol({ x, y, denominator }: { x: number; y: number; denominator: number }) {
+  if (denominator <= 4) return <g className="rest-symbol" data-rest-duration={denominator}><path d={`M ${x-3} ${y-8} l 5 5 -4 4 5 5 -3 6 -1-1 2-5 -6-6 5-5 -4-4 z`}/></g>;
+  const tails=denominator>=16?2:1;
+  return <g className="rest-symbol" data-rest-duration={denominator}><path d={`M ${x+3} ${y-10} q -1 10 -7 18`}/>{Array.from({length:tails},(_,i)=><g key={i}><circle cx={x+1} cy={y-7+i*5} r="2.1"/><path d={`M ${x+1} ${y-6+i*5} q 5 1 2 7`}/></g>)}</g>;
+}
 
 function BarNotation({ position, total }: { position: number; total: number }) {
   const measure = MEASURES[measureId(position, total)];
@@ -10,11 +16,11 @@ function BarNotation({ position, total }: { position: number; total: number }) {
     let cursor = 0;
     measure[staff].forEach((event, index) => {
       const duration=eventDuration(event);const denominator=eventDenominator(event);const first=event[0];const x=22+cursor*22;
-      if(typeof first==="number")glyphs.push(<text key={`${staff}-${index}`} x={x} y={staff==="treble"?33:83} className="rest-glyph" data-rest-duration={denominator}>{restGlyph(denominator)}</text>);
+      if(typeof first==="number")glyphs.push(<RestSymbol key={`${staff}-${index}`} x={x} y={staff==="treble"?29:79} denominator={denominator}/>);
       else {
-        const pitches=Array.isArray(first)?first:[first];const ys=pitches.map(pitch=>staffPitchY(pitch,staff));const stemUp=Math.max(...ys)>28+(staff==="bass"?50:0);const stemX=x+(stemUp?3.5:-3.5);const stemStart=stemUp?Math.min(...ys):Math.max(...ys);const stemEnd=stemStart+(stemUp?-17:17);const flags=flagCount(denominator);
+        const pitches=Array.isArray(first)?first:[first];const ys=pitches.map(pitch=>staffPitchY(pitch,staff));const minY=Math.min(...ys);const maxY=Math.max(...ys);const stemUp=maxY>28+(staff==="bass"?50:0);const stemX=x+(stemUp?3.5:-3.5);const stemStart=stemUp?maxY:minY;const stemEnd=stemUp?minY-17:maxY+17;const flags=flagCount(denominator);
         const ledgers=[...new Set(ys.flatMap(y=>ledgerLineYs(y,staff)))];
-        glyphs.push(<g key={`${staff}-${index}`} data-note-duration={denominator} data-chord-size={pitches.length}>{ledgers.map(y=><line key={y} className="ledger-line" x1={x-6} y1={y} x2={x+7} y2={y}/>)}{pitches.map((pitch,pitchIndex)=>{const y=ys[pitchIndex]??38;return <g key={pitchIndex}><ellipse cx={x} cy={y} rx="4" ry="3" transform={`rotate(-18 ${x} ${y})`}/>{pitch.includes("#")&&<text x={x-10} y={y+4} className="accidental">♯</text>}{pitch.includes("b")&&<text x={x-10} y={y+4} className="accidental">♭</text>}</g>})}<line className="note-stem" x1={stemX} y1={stemStart} x2={stemX} y2={stemEnd}/>{Array.from({length:flags},(_,flag)=><path key={flag} className="note-flag" d={stemUp?`M ${stemX} ${stemEnd+flag*5} q 8 3 7 10`:`M ${stemX} ${stemEnd-flag*5} q -8 -3 -7 -10`}/>)}</g>);
+        glyphs.push(<g key={`${staff}-${index}`} data-note-duration={denominator} data-chord-size={pitches.length}>{ledgers.map(y=><line key={y} className="ledger-line" x1={x-6} y1={y} x2={x+7} y2={y}/>)}{pitches.map((pitch,pitchIndex)=>{const y=ys[pitchIndex]??38;const accidental=pitchAccidental(pitch);return <g key={pitchIndex} data-pitch={pitch}><ellipse cx={x} cy={y} rx="4" ry="3" transform={`rotate(-18 ${x} ${y})`}/>{accidental==="#"&&<text x={x-10} y={y+4} className="accidental">♯</text>}{accidental==="b"&&<text x={x-10} y={y+4} className="accidental">♭</text>}</g>})}<line className="note-stem" x1={stemX} y1={stemStart} x2={stemX} y2={stemEnd}/>{Array.from({length:flags},(_,flag)=><path key={flag} className="note-flag" d={stemUp?`M ${stemX} ${stemEnd+flag*5} q 8 3 7 10`:`M ${stemX} ${stemEnd-flag*5} q -8 -3 -7 -10`}/>)}</g>);
       }
       cursor+=duration;
     });
