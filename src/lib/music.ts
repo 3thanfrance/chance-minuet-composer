@@ -79,6 +79,9 @@ export function decodeShare(value: string | null): Composition | null {
   if (totals.some((n) => !Number.isInteger(n) || n < 2 || n > 12) || !Number.isInteger(tempo) || tempo < 60 || tempo > 180) return null;
   return { totals, dice: totals.map(diceForTotal), instrument: instrumentPart as Instrument, tempo };
 }
+export function compositionExport(composition: Composition, title: string) {
+  return { title, ...composition, measureIds: composition.totals.map((total, position) => measureId(position, total)) };
+}
 
 export function validateMusicData(): string[] {
   const errors: string[] = [];

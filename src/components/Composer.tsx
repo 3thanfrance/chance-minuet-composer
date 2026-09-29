@@ -6,7 +6,7 @@ import { Button } from "./Button";
 import { Die } from "./Dice";
 import { Score } from "./Score";
 import { playComposition, setAudioLevel, stopAudio } from "../lib/audio";
-import { DEFAULT_TOTALS, decodeShare, diceForTotal, encodeShare, INSTRUMENTS, isValidComposition, measureId, rollComposition, rollPair, type Composition, type Instrument } from "../lib/music";
+import { compositionExport, DEFAULT_TOTALS, decodeShare, diceForTotal, encodeShare, INSTRUMENTS, isValidComposition, measureId, rollComposition, rollPair, type Composition, type Instrument } from "../lib/music";
 
 interface SavedMinuet extends Composition { id: string; name: string; savedAt: number; }
 const SAVE_KEY = "chance-music-saves-v1";
@@ -33,13 +33,13 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
   const rerollBar = () => { const pair=rollPair(); updateComposition(c=>({...c,totals:c.totals.map((v,i)=>i===selected?pair[0]+pair[1]:v),dice:c.dice.map((v,i)=>i===selected?pair:v)})); };
   const setTotal = (total:number) => updateComposition(c=>({...c,totals:c.totals.map((v,i)=>i===selected?total:v),dice:c.dice.map((v,i)=>i===selected?diceForTotal(total):v)}));
   const stopPlayback = useCallback(() => { stopAudio(); setPlaying(false); setPlayingBar(null); setProgress(0); }, []);
-  const startPlayback = useCallback(async () => { stopAudio(); setPlaying(true); setPlayingBar(null); setProgress(0); setShareStatus(""); try { await playComposition(composition, muted ? 0 : volume,(bar,p)=>{setPlayingBar(bar);setProgress(p)},()=>{setPlaying(false);setPlayingBar(null);setProgress(0)}); } catch(e) { setPlaying(false); setPlayingBar(null); setProgress(0); setShareStatus(e instanceof Error?e.message:"Audio could not start."); } }, [composition, muted, volume]);
+  const startPlayback = useCallback(async () => { stopAudio(); setAudioLevel(volume,muted); setPlaying(true); setPlayingBar(null); setProgress(0); setShareStatus(""); try { await playComposition(composition, volume,(bar,p)=>{setPlayingBar(bar);setProgress(p)},()=>{setPlaying(false);setPlayingBar(null);setProgress(0)}); } catch(e) { setPlaying(false); setPlayingBar(null); setProgress(0); setShareStatus(e instanceof Error?e.message:"Audio could not start."); } }, [composition, muted, volume]);
   const togglePlayback = () => { if (playing) stopPlayback(); else void startPlayback(); };
   const restart = () => { void startPlayback(); };
   const persist = (next:SavedMinuet[]): boolean => { try { localStorage.setItem(SAVE_KEY,JSON.stringify(next)); setSaves(next); return true; } catch { setShareStatus("This device could not save the minuet."); return false; } };
   const save = () => { const item={...composition,id:crypto.randomUUID(),name:saveName.trim()||"A little chance music, for Bob Pisani",savedAt:Date.now()};if(persist([item,...saves]))setShareStatus("Saved on this device.");};
   const share = async () => { const url=new URL(location.href);url.search="";url.searchParams.set("m",encodeShare(composition));try{await navigator.clipboard.writeText(url.toString());setShareStatus("Share link copied.");}catch{window.prompt("Copy this link",url.toString());setShareStatus("Share link ready.");} };
-  const download = () => { const blob=new Blob([JSON.stringify({title:saveName,...composition,measureIds:composition.totals.map((total,position)=>measureId(position,total))},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="a-little-chance-music.json";a.click();URL.revokeObjectURL(a.href);};
+  const download = () => { const blob=new Blob([JSON.stringify(compositionExport(composition,saveName),null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="a-little-chance-music.json";a.click();URL.revokeObjectURL(a.href);};
   const selectedTotal=composition.totals[selected] ?? 7; const selectedDice=composition.dice[selected] ?? [3,4];
   const currentId=useMemo(()=>measureId(selected,selectedTotal),[selected,selectedTotal]);
   return <main className="desk" id="composer" tabIndex={-1}>
