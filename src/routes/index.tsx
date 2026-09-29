@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { Composer } from "../components/Composer";
 import { Theater } from "../components/Theater";
+import { decodeShare } from "../lib/music";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/")({
 });
 function Index() {
   const [intro, setIntro] = useState(false); const [ready,setReady]=useState(false);
-  useEffect(()=>{const shared=new URLSearchParams(location.search).has("m");setIntro(!shared&&localStorage.getItem("chance-music-intro")!=="seen");setReady(true)},[]);
+  useEffect(()=>{const shared=decodeShare(new URLSearchParams(location.search).get("m"));let seen=false;try{seen=localStorage.getItem("chance-music-intro")==="seen"}catch{/* storage may be blocked */}setIntro(!shared&&!seen);setReady(true)},[]);
   const close=useCallback(()=>{setIntro(false);requestAnimationFrame(()=>document.getElementById("composer")?.focus())},[]);
   if(!ready)return null;
   return <><Composer onReplay={()=>setIntro(true)}/><Theater open={intro} onClose={close}/></>;

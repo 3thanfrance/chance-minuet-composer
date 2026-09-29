@@ -6,6 +6,20 @@ export type Instrument = (typeof INSTRUMENTS)[number];
 export type DicePair = readonly [number, number];
 export interface Composition { totals: number[]; dice: DicePair[]; instrument: Instrument; tempo: number; }
 
+function isDicePair(value: unknown): value is DicePair {
+  return Array.isArray(value) && value.length === 2 && value.every((die) => Number.isInteger(die) && die >= 1 && die <= 6);
+}
+export function isValidComposition(value: unknown): value is Composition {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<Composition>;
+  return Array.isArray(candidate.totals) && candidate.totals.length === 16
+    && candidate.totals.every((total) => Number.isInteger(total) && total >= 2 && total <= 12)
+    && typeof candidate.instrument === "string" && INSTRUMENTS.includes(candidate.instrument as Instrument)
+    && Number.isInteger(candidate.tempo) && Number(candidate.tempo) >= 60 && Number(candidate.tempo) <= 180
+    && Array.isArray(candidate.dice) && candidate.dice.length === 16
+    && candidate.dice.every((pair, index) => isDicePair(pair) && pair[0] + pair[1] === candidate.totals?.[index]);
+}
+
 export function measureId(position: number, total: number): number {
   const row = LOOKUP_TABLE[total - 2];
   const id = row?.[position];
@@ -49,18 +63,24 @@ export function midiToY(midi: number, staff: "treble" | "bass"): number {
   return 34 - (midi - center) * 1.8;
 }
 
-const SHARE_VERSION = "1";
+const SHARE_VERSION = "2";
 export function encodeShare(composition: Composition): string {
-  return `${SHARE_VERSION}.${composition.totals.map((n) => n.toString(12)).join("")}.${composition.instrument}.${composition.tempo}`;
+  if (!isValidComposition(composition)) throw new Error("Cannot share an invalid composition.");
+  return `${SHARE_VERSION}.${composition.totals.map((n) => n.toString(13)).join("")}.${composition.instrument}.${composition.tempo}`;
 }
 export function decodeShare(value: string | null): Composition | null {
   if (!value) return null;
-  const [version, totalsPart, instrumentPart, tempoPart] = value.split(".");
-  if (version !== SHARE_VERSION || totalsPart?.length !== 16 || !INSTRUMENTS.includes(instrumentPart as Instrument)) return null;
-  const totals = [...totalsPart].map((char) => Number.parseInt(char, 12));
+  const parts = value.split(".");
+  if (parts.length !== 4) return null;
+  const [version, totalsPart, instrumentPart, tempoPart] = parts;
+  if (version !== SHARE_VERSION || !totalsPart || !/^[2-9abc]{16}$/.test(totalsPart) || !instrumentPart || !INSTRUMENTS.includes(instrumentPart as Instrument) || !tempoPart || !/^\d+$/.test(tempoPart)) return null;
+  const totals = [...totalsPart].map((char) => Number.parseInt(char, 13));
   const tempo = Number(tempoPart);
-  if (totals.some((n) => n < 2 || n > 11) || !Number.isInteger(tempo) || tempo < 60 || tempo > 180) return null;
+  if (totals.some((n) => !Number.isInteger(n) || n < 2 || n > 12) || !Number.isInteger(tempo) || tempo < 60 || tempo > 180) return null;
   return { totals, dice: totals.map(diceForTotal), instrument: instrumentPart as Instrument, tempo };
+}
+export function compositionExport(composition: Composition, title: string) {
+  return { title, ...composition, measureIds: composition.totals.map((total, position) => measureId(position, total)) };
 }
 
 export function validateMusicData(): string[] {

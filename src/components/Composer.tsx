@@ -5,14 +5,19 @@ import { About } from "./About";
 import { Button } from "./Button";
 import { Die } from "./Dice";
 import { Score } from "./Score";
-import { playComposition, stopAudio } from "../lib/audio";
-import { DEFAULT_TOTALS, decodeShare, diceForTotal, encodeShare, INSTRUMENTS, measureId, rollComposition, rollPair, type Composition, type Instrument } from "../lib/music";
+import { playComposition, setAudioLevel, stopAudio } from "../lib/audio";
+import { compositionExport, DEFAULT_TOTALS, decodeShare, diceForTotal, encodeShare, INSTRUMENTS, isValidComposition, measureId, rollComposition, rollPair, type Composition, type Instrument } from "../lib/music";
 
 interface SavedMinuet extends Composition { id: string; name: string; savedAt: number; }
 const SAVE_KEY = "chance-music-saves-v1";
 const instrumentLabels: Record<Instrument, string> = { piano: "Piano", harpsichord: "Harpsichord", flute: "Flute", strings: "Strings" };
 const instrumentGlyphs: Record<Instrument, string> = { piano: "♭", harpsichord: "♯", flute: "○", strings: "𝆑" };
-function readSaves(): SavedMinuet[] { try { const value = JSON.parse(localStorage.getItem(SAVE_KEY) ?? "[]"); return Array.isArray(value) ? value.filter((x) => x && Array.isArray(x.totals)) : []; } catch { return []; } }
+function isSavedMinuet(value: unknown): value is SavedMinuet {
+  if (!isValidComposition(value)) return false;
+  const saved = value as Partial<SavedMinuet>;
+  return typeof saved.id === "string" && saved.id.length > 0 && typeof saved.name === "string" && saved.name.trim().length > 0 && Number.isFinite(saved.savedAt) && Number(saved.savedAt) > 0;
+}
+function readSaves(): SavedMinuet[] { try { const value: unknown = JSON.parse(localStorage.getItem(SAVE_KEY) ?? "[]"); return Array.isArray(value) ? value.filter(isSavedMinuet) : []; } catch { return []; } }
 
 export function Composer({ onReplay }: { onReplay: () => void }) {
   const [composition, setComposition] = useState<Composition>(() => ({ totals: [...DEFAULT_TOTALS], dice: DEFAULT_TOTALS.map(diceForTotal), instrument: "piano", tempo: 120 }));
@@ -22,16 +27,19 @@ export function Composer({ onReplay }: { onReplay: () => void }) {
   const [saves, setSaves] = useState<SavedMinuet[]>([]); const [saveName, setSaveName] = useState("A little chance music, for Bob Pisani");
   const [rolling, setRolling] = useState(false); const timers = useRef<number[]>([]);
   useEffect(() => { setSaves(readSaves()); const shared = decodeShare(new URLSearchParams(location.search).get("m")); if (shared) setComposition(shared); return () => { timers.current.forEach(clearTimeout); stopAudio(); }; }, []);
+  useEffect(() => { setAudioLevel(volume, muted); }, [volume, muted]);
   const updateComposition = useCallback((updater: (current: Composition) => Composition) => { stopAudio(); setPlaying(false); setPlayingBar(null); setProgress(0); setComposition(updater); }, []);
   const rollAll = () => { const next = rollComposition(); timers.current.forEach(clearTimeout); setRolling(true); next.totals.forEach((total, i) => { const pair=next.dice[i]; if(!pair)return; timers.current.push(window.setTimeout(() => { updateComposition(c => ({...c, totals: c.totals.map((v,j)=>j===i?total:v), dice:c.dice.map((v,j)=>j===i?pair:v)})); if(i===15)setRolling(false); }, i*75)); }); };
   const rerollBar = () => { const pair=rollPair(); updateComposition(c=>({...c,totals:c.totals.map((v,i)=>i===selected?pair[0]+pair[1]:v),dice:c.dice.map((v,i)=>i===selected?pair:v)})); };
   const setTotal = (total:number) => updateComposition(c=>({...c,totals:c.totals.map((v,i)=>i===selected?total:v),dice:c.dice.map((v,i)=>i===selected?diceForTotal(total):v)}));
-  const togglePlayback = async () => { if(playing){stopAudio();setPlaying(false);setPlayingBar(null);return;} try {setPlaying(true);setShareStatus("");await playComposition(composition, muted?0:volume,(bar,p)=>{setPlayingBar(bar);setProgress(p)},()=>{setPlaying(false);setPlayingBar(null);setProgress(0)});} catch(e){setPlaying(false);setShareStatus(e instanceof Error?e.message:"Audio could not start.");} };
-  const restart = async () => { stopAudio(); setPlaying(false); setPlayingBar(null); setProgress(0); await togglePlayback(); };
-  const persist = (next:SavedMinuet[]) => {setSaves(next);try{localStorage.setItem(SAVE_KEY,JSON.stringify(next));}catch{setShareStatus("This device could not save the minuet.");}};
-  const save = () => { const item={...composition,id:crypto.randomUUID(),name:saveName.trim()||"A little chance music, for Bob Pisani",savedAt:Date.now()};persist([item,...saves]);setShareStatus("Saved on this device.");};
+  const stopPlayback = useCallback(() => { stopAudio(); setPlaying(false); setPlayingBar(null); setProgress(0); }, []);
+  const startPlayback = useCallback(async () => { stopAudio(); setAudioLevel(volume,muted); setPlaying(true); setPlayingBar(null); setProgress(0); setShareStatus(""); try { await playComposition(composition, volume,(bar,p)=>{setPlayingBar(bar);setProgress(p)},()=>{setPlaying(false);setPlayingBar(null);setProgress(0)}); } catch(e) { setPlaying(false); setPlayingBar(null); setProgress(0); setShareStatus(e instanceof Error?e.message:"Audio could not start."); } }, [composition, muted, volume]);
+  const togglePlayback = () => { if (playing) stopPlayback(); else void startPlayback(); };
+  const restart = () => { void startPlayback(); };
+  const persist = (next:SavedMinuet[]): boolean => { try { localStorage.setItem(SAVE_KEY,JSON.stringify(next)); setSaves(next); return true; } catch { setShareStatus("This device could not save the minuet."); return false; } };
+  const save = () => { const item={...composition,id:crypto.randomUUID(),name:saveName.trim()||"A little chance music, for Bob Pisani",savedAt:Date.now()};if(persist([item,...saves]))setShareStatus("Saved on this device.");};
   const share = async () => { const url=new URL(location.href);url.search="";url.searchParams.set("m",encodeShare(composition));try{await navigator.clipboard.writeText(url.toString());setShareStatus("Share link copied.");}catch{window.prompt("Copy this link",url.toString());setShareStatus("Share link ready.");} };
-  const download = () => { const blob=new Blob([JSON.stringify({title:saveName,...composition,measureIds:composition.totals.map(measureId)},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="a-little-chance-music.json";a.click();URL.revokeObjectURL(a.href);};
+  const download = () => { const blob=new Blob([JSON.stringify(compositionExport(composition,saveName),null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="a-little-chance-music.json";a.click();URL.revokeObjectURL(a.href);};
   const selectedTotal=composition.totals[selected] ?? 7; const selectedDice=composition.dice[selected] ?? [3,4];
   const currentId=useMemo(()=>measureId(selected,selectedTotal),[selected,selectedTotal]);
   return <main className="desk" id="composer" tabIndex={-1}>
