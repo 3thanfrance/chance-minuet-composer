@@ -1,24 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { Composer } from "../components/Composer";
+import { Theater } from "../components/Theater";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({ meta: [
+    { title: "A Little Chance Music — for Bob Pisani" },
+    { name: "description", content: "A musical dice-game gift for Bob Pisani, presented by Span." },
+    { property: "og:title", content: "A Little Chance Music — for Bob Pisani" },
+    { property: "og:description", content: "Chance chooses. You compose. A private musical gift presented by Span." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ]}), component: Index,
 });
-
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
+  const [intro, setIntro] = useState(false); const [ready,setReady]=useState(false);
+  useEffect(()=>{const shared=new URLSearchParams(location.search).has("m");setIntro(!shared&&localStorage.getItem("chance-music-intro")!=="seen");setReady(true)},[]);
+  const close=useCallback(()=>{setIntro(false);requestAnimationFrame(()=>document.getElementById("composer")?.focus())},[]);
+  if(!ready)return null;
+  return <><Composer onReplay={()=>setIntro(true)}/><Theater open={intro} onClose={close}/></>;
 }
